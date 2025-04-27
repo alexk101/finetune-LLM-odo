@@ -1,6 +1,6 @@
 # LLaMA-3 Fine-tuning and Inference for Code Reasoning
 
-This repository contains code for fine-tuning LLaMA-3 models on code reasoning tasks and running inference with the fine-tuned models. It is optimized for running on Frontier at ORNL.
+This repository contains code for fine-tuning LLaMA-3 models on code reasoning tasks and running inference with the fine-tuned models. It is optimized for running on Frontier at ORNL. Few parts of this code have been adapted from this (repo)[https://github.com/0traced/frontier-finetuning]
 
 **NOTE**
 
@@ -8,7 +8,9 @@ Multinode+multigpu training is not yet supported. Please use only single GPU imp
 
 ## Dataset
 
-The model is finetuned on Nvidia's (OpenCodeReasoning)[https://huggingface.co/datasets/nvidia/OpenCodeReasoning] dataset, which is a collection of questions from multiple coding datasets, and answers from nvidia's Open-R1 model. Since llama-3 (which is what we were asked to use) is not a chain-of-thought reasoning model, this dataset won't necessarily improve the model in any way. In fact, it provides a very good example of why it is important to match a model's actual structure with its training data. In this case, if you fine tune a regular LLM on output from a reasoning model, what you end up with is typically a lot of repetition. You can see this in the example answers.
+The model is finetuned on Nvidia's (OpenCodeReasoning)[https://huggingface.co/datasets/nvidia/OpenCodeReasoning] dataset, which is a collection of questions from multiple coding datasets, and answers from nvidia's Open-R1 model. You can try fine tuning on the `output` column, which is the output of the chain of thought model, or the `solution` column, which is just the original solution to the problem. You can see examples of each in `example/subset.csv`.
+
+If you use the `output` column, since llama-3 (which is what we were asked to use) is not a chain-of-thought reasoning model, this dataset won't necessarily improve the model in any way. In fact, it provides a very good example of why it is important to match a model's actual structure with its training data. In this case, if you fine tune a regular LLM on output from a reasoning model, what you end up with is typically a lot of repetition. You can see this in the example answers. Though, the base model also seems to be somewhat bad at some of the questions I have setup, especially when I ask it to implement something in D. If you fine tune on the `solution` column, you see less of a difference in the output, since it matches what a traditional model expects, that is question + answer.
 
 ## Repository Structure
 

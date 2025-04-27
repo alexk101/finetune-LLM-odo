@@ -48,8 +48,8 @@ def formatting_func(examples):
     """Format the examples into the desired SFT format"""
     texts = []
     for i in range(len(examples["input"])):
-        # Format each example with input and output
-        text = f"Question: {examples['input'][i]}\n\nSolution: {examples['output'][i]}"
+        # Format each example with input and solution
+        text = f"Question: {examples['input'][i]}\n\nSolution: {examples['solution'][i]}"
         texts.append(text)
     return {"text": texts}
 
