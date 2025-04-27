@@ -1,0 +1,7 @@
+Write a function to calculate the factorial of a number in Python using the native python decorator for memoization.
+Provide a proof in agda of the Pigeonhole principle.
+Write an application in D-lang for windows which visualizes ICA on random youtube videos.
+Write a kernel in OpenCL to perform SpMM and SDDMM graph operations.
+Implement the Sieve of Eratosthenes in haskell.
+Create a visualization/animation in c which demonstrates how one can calculate the golden ratio.
+Write me a unique glsl shader based on the theme 'diffraction'.
