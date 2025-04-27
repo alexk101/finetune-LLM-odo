@@ -3,6 +3,7 @@
 #SBATCH -J llm_inference
 #SBATCH -p batch
 #SBATCH -t 00:30:00
+#SBATCH --nodes=1
 #SBATCH --gpus-per-node=1
 #SBATCH --ntasks-per-node=1
 #SBATCH --cpus-per-task=7
