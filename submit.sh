@@ -29,8 +29,8 @@ export no_proxy='localhost,127.0.0.0/8,*.ccs.ornl.gov'
 export ROCR_VISIBLE_DEVICES=$SLURM_LOCALID
 export HIP_VISIBLE_DEVICES=$SLURM_LOCALID
 
-MASTER_ADDR=$(scontrol show hostnames $SLURM_JOB_NODELIST | head -n 1)
-MASTER_PORT=3442
+export MASTER_ADDR=$(scontrol show hostnames $SLURM_JOB_NODELIST | head -n 1)
+export MASTER_PORT=3442
 
 set +x
 
