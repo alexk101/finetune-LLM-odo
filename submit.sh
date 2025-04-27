@@ -6,7 +6,6 @@
 #SBATCH --gpus-per-node=8
 #SBATCH --ntasks-per-node=8  # 8 tasks per node for 8 MI250X GPUs (4 physical GPUs with 2 GCDs each)
 #SBATCH --cpus-per-task=7
-#SBATCH --signal=B:USR1@60  # Send signal 10 minutes before time limit
 #SBATCH -o %x-%j.out
 
 module load PrgEnv-gnu/8.6.0
