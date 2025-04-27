@@ -83,7 +83,7 @@ fine_tuning = SFTTrainer(
     model=base_model,
     train_dataset=training_data,
     peft_config=peft_parameters,
-    tokenizer=llama_tokenizer,
+    processing_class=llama_tokenizer,
     args=train_params
 )
 
