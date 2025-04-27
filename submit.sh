@@ -3,8 +3,7 @@
 #SBATCH -J llm
 #SBATCH -p batch
 #SBATCH -t 00:30:00
-#SBATCH --gpus-per-node=8
-#SBATCH --ntasks-per-node=8  # 8 tasks per node for 8 MI250X GPUs (4 physical GPUs with 2 GCDs each)
+#SBATCH --nodes=1
 #SBATCH --cpus-per-task=7
 #SBATCH -o %x-%j.out
 
