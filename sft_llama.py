@@ -46,7 +46,7 @@ if int(os.environ.get("LOCAL_RANK", "0")) == 0:
 train_params = SFTConfig(
     output_dir="./results_modified",
     num_train_epochs=1,
-    per_device_train_batch_size=4,
+    per_device_train_batch_size=1,
     gradient_accumulation_steps=1,
     save_steps=50,
     logging_steps=50,
@@ -64,6 +64,8 @@ train_params = SFTConfig(
     # Add distributed training parameters
     ddp_find_unused_parameters=False,
     remove_unused_columns=True,
+    # Add label_names to address warning
+    label_names=[],
 )
 
 # LoRA Config
