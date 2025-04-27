@@ -1,0 +1,10 @@
+Using device: cuda:0
+Loading tokenizer...
+Loading base model...
+Loading checkpoint shards:   0%|          | 0/4 [00:00<?, ?it/s]Loading checkpoint shards:  25%|██▌       | 1/4 [00:01<00:03,  1.32s/it]Loading checkpoint shards:  50%|█████     | 2/4 [00:02<00:03,  1.52s/it]Loading checkpoint shards:  75%|███████▌  | 3/4 [00:04<00:01,  1.55s/it]Loading checkpoint shards: 100%|██████████| 4/4 [00:04<00:00,  1.15s/it]
+Loading LoRA adapter from finetuned_llama...
+Model successfully loaded to GPU
+Processing questions from questions.txt...
+Found 7 questions to process.
+  0%|          | 0/7 [00:00<?, ?it/s] 14%|█▍        | 1/7 [02:44<16:24, 164.10s/it] 29%|██▊       | 2/7 [05:41<14:19, 171.81s/it] 43%|████▎     | 3/7 [08:49<11:56, 179.22s/it] 57%|█████▋    | 4/7 [09:56<06:44, 134.90s/it] 71%|███████▏  | 5/7 [13:04<05:08, 154.07s/it] 86%|████████▌ | 6/7 [16:12<02:45, 165.58s/it]100%|██████████| 7/7 [19:20<00:00, 172.93s/it]100%|██████████| 7/7 [19:20<00:00, 165.76s/it]
+Responses saved to answers.txt
