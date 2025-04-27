@@ -8,7 +8,7 @@ Multinode+multigpu training is not yet supported. Please use only single GPU imp
 
 ## Dataset
 
-The model is finetuned on Nvidia's (OpenCodeReasoning)[https://huggingface.co/datasets/nvidia/OpenCodeReasoning] dataset, which is a collection of questions from multiple coding datasets, and answers from nvidia's Open-R1 model.
+The model is finetuned on Nvidia's (OpenCodeReasoning)[https://huggingface.co/datasets/nvidia/OpenCodeReasoning] dataset, which is a collection of questions from multiple coding datasets, and answers from nvidia's Open-R1 model. Since llama-3 (which is what we were asked to use) is not a chain-of-thought reasoning model, this dataset won't necessarily improve the model in any way. In fact, it provides a very good example of why it is important to match a model's actual structure with its training data. In this case, if you fine tune a regular LLM on output from a reasoning model, what you end up with is typically a lot of repetition. You can see this in the example answers.
 
 ## Repository Structure
 
@@ -20,6 +20,7 @@ The model is finetuned on Nvidia's (OpenCodeReasoning)[https://huggingface.co/da
 - **`run_inference.sh`**: SLURM job submission script for inference
 - **`export_DDP_vars.sh`**: Environment variable setup for distributed training (for future use)
 - **`questions.txt`**: Example questions for testing inference
+- **`example`**: This directory contains and example of both fine tuning output and inference
 
 ## Prerequisites
 
