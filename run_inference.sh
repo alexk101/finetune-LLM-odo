@@ -28,10 +28,6 @@ export no_proxy='localhost,127.0.0.0/8,*.ccs.ornl.gov'
 export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK
 export MKL_NUM_THREADS=$SLURM_CPUS_PER_TASK
 
-# Set environment variables for AMD GPUs
-export ROCR_VISIBLE_DEVICES=0
-export HIP_VISIBLE_DEVICES=0
-
 # Choose one of the following execution modes by uncommenting:
 
 # 1. Run in interactive mode (good for testing):
@@ -41,4 +37,9 @@ export HIP_VISIBLE_DEVICES=0
 # python inference.py --gpu --bf16 --question "Write a function to calculate the factorial of a number in Python."
 
 # 3. Batch process from file (one question per line in input.txt, one answer per line in output.txt):
-python inference.py --gpu --bf16 --input-file questions.txt --output-file answers.txt 
+
+$CONDA_ENV/bin/python inference.py \
+    --gpu \
+    --bf16 \
+    --input-file questions.txt \
+    --output-file answers.txt 
