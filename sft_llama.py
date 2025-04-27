@@ -8,6 +8,7 @@ from transformers import (
 from peft import LoraConfig
 from trl import SFTTrainer, SFTConfig
 from comm import init_process_group
+import torch.distributed as dist
 
 
 # Initialize distributed training
@@ -38,25 +39,53 @@ base_model = AutoModelForCausalLM.from_pretrained(
 base_model.config.use_cache = False
 base_model.config.pretraining_tp = 1
 
-# Data set
+# Use streaming mode to process data on-the-fly instead of preprocessing everything at once
 data_name = "nvidia/OpenCodeReasoning"
-raw_dataset = load_dataset(data_name, "split_0", cache_dir="data_cache")
 
-# Format dataset for SFTTrainer by combining input and output fields
-def format_dataset(example):
-    return {
-        "text": f"Question: {example['input']}\n\nSolution: {example['output']}"
-    }
+# We'll use streaming mode with a data formatting function
+# This processes examples on-the-fly instead of transforming the entire dataset at once
+def formatting_func(examples):
+    """Format the examples into the desired SFT format"""
+    texts = []
+    for i in range(len(examples["input"])):
+        # Format each example with input and output
+        text = f"Question: {examples['input'][i]}\n\nSolution: {examples['output'][i]}"
+        texts.append(text)
+    return {"text": texts}
 
-training_data = raw_dataset["split_0"].map(format_dataset)
+# Load the streaming dataset
+raw_dataset = load_dataset(
+    data_name, 
+    "split_0", 
+    streaming=True,
+    cache_dir="data_cache"
+)
+
+# Set up for streaming with batched processing
+streaming_dataset = raw_dataset.map(
+    formatting_func,
+    batched=True,
+    batch_size=10  # Process 10 examples at a time
+)
+
+# Convert to regular dataset for SFTTrainer but with a reasonable subset size
+# This allows us to process in chunks rather than all at once
+max_samples = 50000  # Adjust based on memory constraints
+training_data = streaming_dataset.take(max_samples)
 
 # Only print dataset info from main process
 if int(os.environ.get("LOCAL_RANK", "0")) == 0:
-    print(f"Dataset size: {len(training_data)}")
+    # Get one sample to show
+    sample = next(iter(streaming_dataset))
     print("Sample formatted example:")
-    print(training_data[0]["text"][:500] + "...")
+    print(sample["text"][:500] + "...")
+    
+    # Show memory usage before training
+    if torch.cuda.is_available():
+        print(f"GPU memory allocated: {torch.cuda.memory_allocated(device) / 1024**2:.2f} MB")
+        print(f"GPU memory reserved: {torch.cuda.memory_reserved(device) / 1024**2:.2f} MB")
 
-# Training Params
+# Training Params with gradient checkpointing to reduce memory usage
 train_params = SFTConfig(
     output_dir="./results_modified",
     num_train_epochs=200,
@@ -69,7 +98,7 @@ train_params = SFTConfig(
     fp16=False,
     bf16=True,
     max_grad_norm=0.3,
-    max_steps=-1,
+    max_steps=20000,  # Limit number of steps instead of epochs for large datasets
     warmup_ratio=0.03,
     group_by_length=True,
     lr_scheduler_type="constant",
@@ -79,7 +108,9 @@ train_params = SFTConfig(
     ddp_find_unused_parameters=False,
     remove_unused_columns=True,
     # Add label_names to address warning
-    label_names=[]
+    label_names=[],
+    # Enable gradient checkpointing to save memory
+    gradient_checkpointing=True
 )
 
 # LoRA Config
