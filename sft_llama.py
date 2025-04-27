@@ -11,7 +11,11 @@ from comm import init_process_group
 
 
 # Initialize distributed training
-init_process_group()
+rank, world_size, local_rank = init_process_group()
+
+# Set device for this process
+device = torch.device(f"cuda:0")
+print(f"Rank {rank}: Using device {device}")
 
 # Model and tokenizer names
 base_model_name = "meta-llama/Meta-Llama-3-8B"
