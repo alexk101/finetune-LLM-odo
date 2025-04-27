@@ -15,7 +15,10 @@ base_model_name = "meta-llama/Meta-Llama-3-8B"
 new_model_name = "llama-3-8b-enhanced" #You can give your own name for fine tuned model
 
 # Tokenizer
-llama_tokenizer = AutoTokenizer.from_pretrained(base_model_name, trust_remote_code=True)
+llama_tokenizer = AutoTokenizer.from_pretrained(
+    base_model_name, 
+    trust_remote_code=True
+)
 llama_tokenizer.pad_token = llama_tokenizer.eos_token
 llama_tokenizer.padding_side = "right"
 
@@ -40,9 +43,8 @@ print(training_data[11])
 train_params = SFTConfig(
     output_dir="./results_modified",
     num_train_epochs=1,
-    per_device_train_batch_size=1,
+    per_device_train_batch_size=4,
     gradient_accumulation_steps=1,
-    #optim="paged_adamw_32bit",
     save_steps=50,
     logging_steps=50,
     learning_rate=4e-5,
