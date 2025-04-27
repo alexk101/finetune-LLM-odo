@@ -69,8 +69,7 @@ train_params = SFTConfig(
     ddp_find_unused_parameters=False,
     remove_unused_columns=True,
     # Add label_names to address warning
-    label_names=[],
-    device_map={"": local_rank}
+    label_names=[]
 )
 
 # LoRA Config
