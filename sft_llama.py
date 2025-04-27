@@ -10,12 +10,12 @@ from trl import SFTTrainer, SFTConfig
 from comm import init_process_group
 
 
-# Initialize distributed training
-rank, world_size, local_rank = init_process_group()
-
 # Set device for this process
 device = torch.device(f"cuda:0")
-print(f"Rank {rank}: Using device {device}")
+torch.cuda.set_device(device)
+
+# Initialize distributed training
+rank, world_size, local_rank = init_process_group()
 
 # Model and tokenizer names
 base_model_name = "meta-llama/Meta-Llama-3-8B"
