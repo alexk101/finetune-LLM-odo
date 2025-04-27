@@ -6,6 +6,10 @@ This repository contains code for fine-tuning LLaMA-3 models on code reasoning t
 
 Multinode+multigpu training is not yet supported. Please use only single GPU implementations.
 
+## Dataset
+
+The model is finetuned on Nvidia's (OpenCodeReasoning)[https://huggingface.co/datasets/nvidia/OpenCodeReasoning] dataset, which is a collection of questions from multiple coding datasets, and answers from nvidia's Open-R1 model.
+
 ## Repository Structure
 
 - **`sft_llama.py`**: Main script for fine-tuning LLaMA-3 models with LoRA adapters

@@ -57,7 +57,13 @@ def main():
     
     # Load the base model
     print("Loading base model...")
-    model_kwargs = {"device_map": "auto"} if args.gpu else {}
+    if args.gpu and torch.cuda.is_available():
+        device_map = "auto"
+    else:
+        device_map = {"": device}
+        
+    model_kwargs = {"device_map": device_map}
+    
     if args.bf16:
         model_kwargs["torch_dtype"] = torch.bfloat16
     
@@ -75,14 +81,17 @@ def main():
     def generate_answer(question):
         formatted_prompt = format_prompt(question)
         
-        # Tokenize the prompt
-        inputs = tokenizer(formatted_prompt, return_tensors="pt")
-        input_ids = inputs["input_ids"].to(device)
+        # Tokenize the prompt with attention mask
+        inputs = tokenizer(formatted_prompt, return_tensors="pt", padding=True)
+        
+        # Move inputs to the same device as the model
+        for key in inputs:
+            inputs[key] = inputs[key].to(device)
         
         # Generate the response
         with torch.no_grad():
             outputs = model.generate(
-                input_ids=input_ids,
+                **inputs,
                 max_length=args.max_length,
                 temperature=args.temperature,
                 top_p=args.top_p,
