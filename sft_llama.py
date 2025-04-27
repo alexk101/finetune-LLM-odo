@@ -54,15 +54,18 @@ def formatting_func(examples):
     return {"text": texts}
 
 # Load the streaming dataset
-raw_dataset = load_dataset(
+streaming_dataset_dict = load_dataset(
     data_name, 
     "split_0", 
     streaming=True,
     cache_dir="data_cache"
 )
 
-# Set up for streaming with batched processing
-streaming_dataset = raw_dataset.map(
+# Extract the specific split from the IterableDatasetDict
+streaming_dataset = streaming_dataset_dict["split_0"]
+
+# Set up streaming with batched processing
+streaming_dataset = streaming_dataset.map(
     formatting_func,
     batched=True,
     batch_size=10  # Process 10 examples at a time
