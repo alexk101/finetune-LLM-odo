@@ -2,7 +2,7 @@
 #SBATCH -A trn040
 #SBATCH -J llm
 #SBATCH -p batch
-#SBATCH -t 00:30:00
+#SBATCH -t 12:00:00
 #SBATCH --nodes=1
 #SBATCH --cpus-per-task=7
 #SBATCH -o %x-%j.out
@@ -37,11 +37,11 @@ set +x
 cmd="$CONDA_ENV/bin/python sft_llama.py"
 
 # Run with srun using the proper format
-srun -n$((SLURM_JOB_NUM_NODES*8)) \
+srun -n 1 \
     -c $SLURM_CPUS_PER_TASK \
     --gpus-per-task=1 \
     --gpu-bind=closest \
-    --ntasks-per-node=8 \
+    --ntasks-per-node=1 \
     bash -c "
     source export_DDP_vars.sh
     $cmd

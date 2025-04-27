@@ -24,7 +24,8 @@ new_model_name = "llama-3-8b-enhanced" #You can give your own name for fine tune
 # Tokenizer
 llama_tokenizer = AutoTokenizer.from_pretrained(
     base_model_name, 
-    trust_remote_code=True
+    trust_remote_code=True,
+    use_fast=False
 )
 llama_tokenizer.pad_token = llama_tokenizer.eos_token
 llama_tokenizer.padding_side = "right"
@@ -38,7 +39,7 @@ base_model.config.use_cache = False
 base_model.config.pretraining_tp = 1
 
 # Data set
-data_name = "mlabonne/guanaco-llama2-1k"
+data_name = "nvidia/OpenCodeReasoning"
 training_data = load_dataset(data_name, split="train", cache_dir="data_cache")
 
 # Only print dataset info from main process
@@ -49,7 +50,7 @@ if int(os.environ.get("LOCAL_RANK", "0")) == 0:
 # Training Params
 train_params = SFTConfig(
     output_dir="./results_modified",
-    num_train_epochs=1,
+    num_train_epochs=200,
     per_device_train_batch_size=1,
     gradient_accumulation_steps=1,
     save_steps=50,
