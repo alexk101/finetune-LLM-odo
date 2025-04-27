@@ -10,7 +10,6 @@ from peft import LoraConfig
 from trl import SFTTrainer, SFTConfig
 
 # Model and tokenizer names
-base_model_name = "NousResearch/Llama-2-7b-chat"
 base_model_name = "meta-llama/Meta-Llama-3-8B"
 new_model_name = "llama-3-8b-enhanced" #You can give your own name for fine tuned model
 
@@ -22,10 +21,9 @@ llama_tokenizer = AutoTokenizer.from_pretrained(
 llama_tokenizer.pad_token = llama_tokenizer.eos_token
 llama_tokenizer.padding_side = "right"
 
-# Model
+# Model - remove explicit device mapping for distributed training
 base_model = AutoModelForCausalLM.from_pretrained(
     base_model_name,
-    device_map="cuda:0",
     cache_dir="llama3-models"
 )
 base_model.config.use_cache = False
@@ -58,6 +56,9 @@ train_params = SFTConfig(
     lr_scheduler_type="constant",
     report_to="tensorboard",
     dataset_text_field="text",
+    # Add distributed training parameters
+    ddp_find_unused_parameters=False,
+    remove_unused_columns=True,
 )
 
 from peft import get_peft_model
@@ -69,18 +70,22 @@ peft_parameters = LoraConfig(
     bias="none",
     task_type="CAUSAL_LM"
 )
-model = get_peft_model(base_model, peft_parameters)
-model.print_trainable_parameters()
 
 # Trainer with LoRA configuration
 fine_tuning = SFTTrainer(
     model=base_model,
     train_dataset=training_data,
     peft_config=peft_parameters,
-    processing_class=llama_tokenizer,
+    tokenizer=llama_tokenizer,
     args=train_params
 )
 
 # Training
 fine_tuning.train()
-model.save_pretrained("finetuned_llama")
+
+# Save the model in the main process only
+if torch.distributed.is_initialized():
+    if torch.distributed.get_rank() == 0:
+        fine_tuning.model.save_pretrained("finetuned_llama")
+else:
+    fine_tuning.model.save_pretrained("finetuned_llama")
