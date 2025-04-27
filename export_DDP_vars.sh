@@ -3,3 +3,10 @@ export RANK=$SLURM_PROCID
 export WORLD_RANK=$SLURM_PROCID
 export LOCAL_RANK=$SLURM_LOCALID
 export WORLD_SIZE=$SLURM_NTASKS
+
+# Frontier AMD GPU settings - each process should only see one GPU (as device 0)
+export ROCR_VISIBLE_DEVICES=$LOCAL_RANK
+export HIP_VISIBLE_DEVICES=$LOCAL_RANK
+
+# Print debug info
+echo "[Rank $RANK] LOCAL_RANK=$LOCAL_RANK, HIP_VISIBLE_DEVICES=$HIP_VISIBLE_DEVICES"

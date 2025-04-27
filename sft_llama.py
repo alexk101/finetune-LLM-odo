@@ -40,12 +40,21 @@ base_model.config.pretraining_tp = 1
 
 # Data set
 data_name = "nvidia/OpenCodeReasoning"
-training_data = load_dataset(data_name, split="split_0", cache_dir="data_cache")
+raw_dataset = load_dataset(data_name, "split_0", cache_dir="data_cache")
+
+# Format dataset for SFTTrainer by combining input and output fields
+def format_dataset(example):
+    return {
+        "text": f"Question: {example['input']}\n\nSolution: {example['output']}"
+    }
+
+training_data = raw_dataset["split_0"].map(format_dataset)
 
 # Only print dataset info from main process
 if int(os.environ.get("LOCAL_RANK", "0")) == 0:
-    print(training_data.shape)
-    print(training_data[11])
+    print(f"Dataset size: {len(training_data)}")
+    print("Sample formatted example:")
+    print(training_data[0]["text"][:500] + "...")
 
 # Training Params
 train_params = SFTConfig(
