@@ -29,7 +29,6 @@ export MASTER_PORT=3442
 # Set OMP and MKL threads
 export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK
 export MKL_NUM_THREADS=$SLURM_CPUS_PER_TASK
-export HF_ENDPOINT='https://hf-mirror.com'
 
 set +x
 
