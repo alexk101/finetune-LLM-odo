@@ -6,3 +6,4 @@ results_modified
 *.log
 *.json
 *__pycache__
+finetuned_llama
