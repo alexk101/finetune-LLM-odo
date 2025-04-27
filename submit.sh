@@ -24,10 +24,6 @@ export http_proxy=http://proxy.ccs.ornl.gov:3128/
 export https_proxy=http://proxy.ccs.ornl.gov:3128/
 export no_proxy='localhost,127.0.0.0/8,*.ccs.ornl.gov'
 
-# Set environment variables for ROCm/HIP
-export ROCR_VISIBLE_DEVICES=$SLURM_LOCALID
-export HIP_VISIBLE_DEVICES=$SLURM_LOCALID
-
 export MASTER_ADDR=$(scontrol show hostnames $SLURM_JOB_NODELIST | head -n 1)
 export MASTER_PORT=3442
 
