@@ -9,6 +9,12 @@ from transformers import (
 from peft import LoraConfig
 from trl import SFTTrainer, SFTConfig
 
+# Set visible GPU for ROCm
+if "SLURM_LOCALID" in os.environ:
+    local_rank = int(os.environ["SLURM_LOCALID"])
+    os.environ["HIP_VISIBLE_DEVICES"] = str(local_rank)
+    os.environ["ROCR_VISIBLE_DEVICES"] = str(local_rank)
+
 # Model and tokenizer names
 base_model_name = "meta-llama/Meta-Llama-3-8B"
 new_model_name = "llama-3-8b-enhanced" #You can give your own name for fine tuned model
@@ -32,10 +38,11 @@ base_model.config.pretraining_tp = 1
 # Data set
 data_name = "mlabonne/guanaco-llama2-1k"
 training_data = load_dataset(data_name, split="train", cache_dir="data_cache")
-# check the data
-print(training_data.shape)
-# #11 is a QA sample in English
-print(training_data[11])
+
+# Only print dataset info from main process
+if int(os.environ.get("LOCAL_RANK", "0")) == 0:
+    print(training_data.shape)
+    print(training_data[11])
 
 # Training Params
 train_params = SFTConfig(

@@ -3,8 +3,8 @@
 #SBATCH -J llm
 #SBATCH -p batch
 #SBATCH -t 00:30:00
-#SBATCH --gres=gpu:8
-#SBATCH --ntasks-per-node=8  # 8 tasks per node for 8 MI250X GPUs
+#SBATCH --gpus-per-node=8
+#SBATCH --ntasks-per-node=8  # 8 tasks per node for 8 MI250X GPUs (4 physical GPUs with 2 GCDs each)
 #SBATCH --cpus-per-task=7
 #SBATCH --signal=B:USR1@60  # Send signal 10 minutes before time limit
 #SBATCH -o %x-%j.out
@@ -25,19 +25,25 @@ export http_proxy=http://proxy.ccs.ornl.gov:3128/
 export https_proxy=http://proxy.ccs.ornl.gov:3128/
 export no_proxy='localhost,127.0.0.0/8,*.ccs.ornl.gov'
 
+# Set environment variables for ROCm/HIP
+export ROCR_VISIBLE_DEVICES=$SLURM_LOCALID
+export HIP_VISIBLE_DEVICES=$SLURM_LOCALID
+
 MASTER_ADDR=$(scontrol show hostnames $SLURM_JOB_NODELIST | head -n 1)
 MASTER_PORT=3442
 
 set +x
 
-CMD="accelerate launch \
-    --num_processes $((SLURM_NNODES * 8)) \
-    --num_machines $SLURM_NNODES \
-    --rdzv_backend c10d \
-    --main_process_ip $MASTER_ADDR \
-    --main_process_port $MASTER_PORT \
-    --mixed_precision bf16 \
-    sft_llama.py \
+# Define the command to run
+cmd="$CONDA_ENV/bin/python sft_llama.py"
+
+# Run with srun using the proper format
+srun -n$((SLURM_JOB_NUM_NODES*8)) \
+    -c $SLURM_CPUS_PER_TASK \
+    --gpus-per-task=1 \
+    --gpu-bind=closest \
+    --ntasks-per-node=8 \
+    bash -c "
+    source export_DDP_vars.sh
+    $cmd
     "
-srun $CMD
-# srun ${CONDA_ENV}/bin/python sft_llama.py 
