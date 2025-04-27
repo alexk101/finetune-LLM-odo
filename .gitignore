@@ -1,0 +1,7 @@
+data_cache
+llama3-models
+results_modified
+*.out
+*.err
+*.log
+*.json
