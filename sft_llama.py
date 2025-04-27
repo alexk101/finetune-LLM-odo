@@ -40,7 +40,7 @@ base_model.config.pretraining_tp = 1
 
 # Data set
 data_name = "nvidia/OpenCodeReasoning"
-training_data = load_dataset(data_name, split="train", cache_dir="data_cache")
+training_data = load_dataset(data_name, split="split_0", cache_dir="data_cache")
 
 # Only print dataset info from main process
 if int(os.environ.get("LOCAL_RANK", "0")) == 0:
