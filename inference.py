@@ -42,7 +42,8 @@ def main():
     torch.manual_seed(args.seed)
     
     # Set device
-    device = torch.device("cuda:0" if args.gpu and torch.cuda.is_available() else "cpu")
+    use_gpu = args.gpu and torch.cuda.is_available()
+    device = torch.device("cuda:0" if use_gpu else "cpu")
     print(f"Using device: {device}")
     
     # Load the tokenizer
@@ -55,27 +56,35 @@ def main():
     tokenizer.pad_token = tokenizer.eos_token
     tokenizer.padding_side = "right"
     
-    # Load the base model
+    # Load the base model - force CPU to avoid memory issues
     print("Loading base model...")
-    if args.gpu and torch.cuda.is_available():
-        device_map = "auto"
-    else:
-        device_map = {"": device}
-        
-    model_kwargs = {"device_map": device_map}
-    
-    if args.bf16:
+    model_kwargs = {}
+    if args.bf16 and use_gpu:
         model_kwargs["torch_dtype"] = torch.bfloat16
     
+    # Load model entirely on CPU first
     base_model = AutoModelForCausalLM.from_pretrained(
         args.base_model,
         trust_remote_code=True,
+        device_map="cpu",
         **model_kwargs
     )
     
-    # Load the fine-tuned LoRA adapter
+    # Load the fine-tuned LoRA adapter on CPU
     print(f"Loading LoRA adapter from {args.adapter_path}...")
     model = PeftModel.from_pretrained(base_model, args.adapter_path)
+    
+    # Move model to GPU if requested and if there's enough memory
+    if use_gpu:
+        try:
+            # Try to move the entire model to GPU
+            model = model.to(device)
+            print("Model successfully loaded to GPU")
+        except RuntimeError as e:
+            print(f"Failed to move model to GPU due to: {e}")
+            print("Running on CPU instead")
+            device = torch.device("cpu")
+            model = model.to(device)
     
     # Inference function
     def generate_answer(question):
