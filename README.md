@@ -1,6 +1,6 @@
 # LLaMA-3 Fine-tuning and Inference for Code Reasoning
 
-This repository contains code for fine-tuning LLaMA-3 models on code reasoning tasks and running inference with the fine-tuned models. It is optimized for running on Frontier at ORNL. Few parts of this code have been adapted from this (repo)[https://github.com/0traced/frontier-finetuning]
+This repository contains code for fine-tuning LLaMA-3 models on code reasoning tasks and running inference with the fine-tuned models. It is optimized for running on Frontier at ORNL. Few parts of this code have been adapted from this (repo)[https://github.com/0traced/frontier-finetuning]. Fine tuning on 20000 samples takes ~3-4 hours on one gpu.
 
 **NOTE**
 
