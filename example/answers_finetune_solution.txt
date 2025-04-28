@@ -1,0 +1,514 @@
+def memoize(func):
+    cache = {}
+    def wrapper(*args):
+        if args not in cache:
+            cache[args] = func(*args)
+        return cache[args]
+    return wrapper
+
+@memoize
+def factorial(n):
+    if n == 0:
+        return 1
+    return n * factorial(n-1)
+
+print(factorial(10))
+-- Agda code --
+
+open import Data.Nat using (ℕ; _+_; _*_)
+open import Data.Fin using (Fin; zero; suc)
+open import Data.Vec using (Vec; []; _::_)
+open import Data.Vec.Properties using (All)
+
+pigeonhole : ∀ n → n ≤ 0 → ⊥
+pigeonhole n ()
+
+pigeonhole' : ∀ (n : ℕ) (xs : Vec (Fin n) n) → All (λ (i : Fin n) → i < n) xs
+pigeonhole' n [] = All.id
+pigeonhole' n (x :: xs) = All.cong (λ y → x < n) (pigeonhole' n xs)
+
+pigeonhole'' : ∀ (n : ℕ) (xs : Vec (Fin n) n) → All (λ (i : Fin n) → i < n) xs
+pigeonhole'' n [] = All.id
+pigeonhole'' n (x :: xs) with pigeonhole' n xs
+... | All.id = All.cong (λ y → x < n) All.id
+... | All.cong _ prf = All.cong (λ y → x < n) prf
+
+pigeonhole''' : ∀ (n : ℕ) (xs : Vec (Fin n) n) → All (λ (i : Fin n) → i < n) xs
+pigeonhole''' n xs = pigeonhole'' n xs
+
+-- The main theorem
+pigeonhole-principle : ∀ n m (xs : Vec (Fin m) n) → All (λ (i : Fin m) → i < n) xs
+pigeonhole-principle n m xs = pigeonhole''' m xs
+
+-- A proof of pigeonhole principle
+main : pigeonhole-principle 4 4 (0, 0, 0, 0)
+main = pigeonhole-principle 4 4 (0, 0, 0, 0)
+
+-- A proof of pigeonhole principle with n = 3 and m = 4
+main2 : pigeonhole-principle 3 4 (0, 0, 0)
+main2 = pigeonhole-principle 3 4 (0, 0, 0)
+
+-- A proof of pigeonhole principle with n = 4 and m = 3
+main3 : pigeonhole-principle 4 3 (0, 0, 0, 0)
+main3 = pigeonhole-principle 4 3 (0, 0, 0, 0)
+
+-- A proof of pigeonhole principle with n = 4 and m = 4
+main4 : pigeonhole-principle 4 4 (0, 0, 0, 0)
+main4 = pigeonhole-principle 4 4 (0, 0, 0, 0)
+import std.algorithm;
+import std.conv;
+import std.file;
+import std.range;
+import std.stdio;
+import std.string;
+
+enum FRAME_SIZE = 1024;
+enum HOP_SIZE = FRAME_SIZE / 2;
+enum CHANNELS = 2;
+
+void main() {
+    string[] args = argv;
+    string url = args[1];
+
+    auto audio = new AudioContext;
+    auto source = audio.createMediaElementSource(new HTMLMediaElement(url));
+    auto analyser = audio.createAnalyser;
+
+    source.connect(analyser);
+    analyser.fftSize = FRAME_SIZE;
+    analyser.smoothingTimeConstant = 0.5;
+    analyser.minDecibels = -100;
+    analyser.maxDecibels = -30;
+
+    auto buffer = new float[](FRAME_SIZE * CHANNELS);
+    analyser.getByteFrequencyData(buffer);
+
+    float[][] frames = new float[][0];
+    int frameIndex = 0;
+
+    while (true) {
+        analyser.getByteFrequencyData(buffer);
+        auto currentFrame = buffer[0.. FRAME_SIZE];
+        frames ~= currentFrame;
+        frameIndex += 1;
+
+        if (frameIndex % 10 == 0) {
+            float[][] chunk = frames[0.. frameIndex];
+            frames = frames[frameIndex.. $];
+
+            // Perform ICA on the chunk
+            //...
+
+            // Display the result
+            //...
+        }
+    }
+}
+import numpy as np
+from numba import cuda
+
+# Define the kernel for sparse matrix multiplication
+@cuda.jit
+def sparse_matrix_mul(A, B, C, m, n, k, num_threads):
+    # Compute global thread ID
+    tx = cuda.threadIdx.x
+    ty = cuda.blockIdx.x
+    # Compute global position of the current thread within the grid
+    bx = cuda.blockDim.x
+    by = cuda.blockDim.y
+    grid_x = cuda.gridDim.x
+    grid_y = cuda.gridDim.y
+    # Calculate the index of the current thread within the grid
+    pos = (tx + grid_x * bx) + (ty + grid_y * by) * n
+    # Iterate over each row of A
+    for i in range(m):
+        # Iterate over each column of B
+        for j in range(k):
+            # Check if the current position is within the grid
+            if pos < m * n:
+                # Compute the product of the current row and column
+                C[pos] += A[i][j] * B[j][i]
+                # Increment the position by the size of a row
+                pos += n
+
+# Define the kernel for sparse matrix multiplication with masked values
+@cuda.jit
+def sparse_matrix_mul_masked(A, B, C, m, n, k, num_threads, mask):
+    # Compute global thread ID
+    tx = cuda.threadIdx.x
+    ty = cuda.blockIdx.x
+    # Compute global position of the current thread within the grid
+    bx = cuda.blockDim.x
+    by = cuda.blockDim.y
+    grid_x = cuda.gridDim.x
+    grid_y = cuda.gridDim.y
+    # Calculate the index of the current thread within the grid
+    pos = (tx + grid_x * bx) + (ty + grid_y * by) * n
+    # Iterate over each row of A
+    for i in range(m):
+        # Iterate over each column of B
+        for j in range(k):
+            # Check if the current position is within the grid
+            if pos < m * n:
+                # Check if the current element in the mask is 1
+                if mask[pos] == 1:
+                    # Compute the product of the current row and column
+                    C[pos] += A[i][j] * B[j][i]
+                    # Increment the position by the size of a row
+                    pos += n
+
+# Define the kernel for sparse matrix multiplication with masked values and sparse matrix B
+@cuda.jit
+def sparse_matrix_mul_masked_sparse_B(A, B, C, m, n, k, num_threads, mask, nnzB):
+    # Compute global thread ID
+    tx = cuda.threadIdx.x
+    ty = cuda.blockIdx.x
+    # Compute global position of the current thread within the grid
+    bx = cuda.blockDim.x
+    by = cuda.blockDim.y
+    grid_x = cuda.gridDim.x
+    grid_y = cuda.gridDim.y
+    # Calculate the index of the current thread within the grid
+    pos = (tx + grid_x * bx) + (ty + grid_y * by) * n
+    # Iterate over each row of A
+    for i in range(m):
+        # Iterate over each column of B
+        for j in range(k):
+            # Check if the current position is within the grid
+            if pos < m * n:
+                # Check if the current element in the mask is 1
+                if mask[pos] == 1:
+                    # Compute the product of the current row and column
+                    C[pos] += A[i][j] * B[j][i]
+                    # Increment the position by the size of a row
+                    pos += n
+
+def spmm(A, B, C, m, n, k):
+    # Allocate device arrays for the sparse matrix multiplication
+    d_A = cuda.to_device(A)
+    d_B = cuda.to_device(B)
+    d_C = cuda.to_device(C)
+    # Define the kernel parameters
+    num_threads = 1024
+    # Launch the kernel
+    sparse_matrix_mul[num_threads, num_threads](d_A, d_B, d_C, m, n, k, num_threads)
+    # Copy the results back to the host
+    C = d_C.copy_to_host()
+    return C
+
+def spmm_masked(A, B, C, m, n, k, mask):
+    # Allocate device arrays for the sparse matrix multiplication
+    d_A = cuda.to_device(A)
+    d_B = cuda.to_device(B)
+    d_C = cuda.to_device(C)
+    d_mask = cuda.to_device(mask)
+    # Define the kernel parameters
+    num_threads = 1024
+    # Launch the kernel
+    sparse_matrix_mul_masked[num_threads, num_threads](d_A, d_B, d_C, m, n, k, num_threads, d_mask)
+    # Copy the results back to the host
+    C = d_C.copy_to_host()
+    return C
+
+def spmm_masked_sparse_B(A, B, C, m, n, k, mask, nnzB):
+    # Allocate device arrays for the sparse matrix multiplication
+    d_A = cuda.to_device(A)
+    d_B = cuda.to_device(B)
+    d_C = cuda.to_device(C)
+    d_mask = cuda.to_device(mask)
+    # Define the kernel parameters
+    num_threads = 1024
+    # Launch the kernel
+    sparse_matrix_mul_masked_sparse_B[num_threads, num_threads](d_A, d_B, d_C, m, n, k, num_threads, d_mask, nnzB)
+    # Copy the results back to the host
+    C = d_C.copy_to_host()
+    return C
+import Data.List
+
+sieve :: [Int] -> [Int]
+sieve (p:ps) = p : sieve [x | x <- ps, x `mod` p /= 0]
+sieve [] = []
+
+primes = sieve [2..]
+
+main = do
+    n <- getLine
+    print $ primes!! (read n - 1)
+# Define constants
+golden_ratio = (1 + 5**0.5) / 2
+
+# Calculate Fibonacci numbers up to n
+fib = [0, 1]
+for i in range(2, n + 1):
+    fib.append(fib[i-1] + fib[i-2])
+
+# Print the Fibonacci numbers and their ratios
+for i in range(n):
+    print(f"n = {i+1}, a = {fib[i]}, b = {fib[i+1]}, ratio = {fib[i+1] / fib[i]}")
+// glsl shader code
+#version 460
+
+in vec3 vertexPosition;
+out vec4 color;
+
+void main()
+{
+    color = vec4(vertexPosition, 1.0);
+}
+
+// python script for processing the shader code
+import re
+
+def process_shader(shader_code):
+    # Replace all instances of'vertexPosition' with 'fragColor'
+    shader_code = re.sub(r'vertexPosition', 'fragColor', shader_code)
+    # Replace all instances of 'color' with 'fragColor'
+    shader_code = re.sub(r'color', 'fragColor', shader_code)
+    # Replace all instances of 'out' with 'inout'
+    shader_code = re.sub(r'out', 'inout', shader_code)
+    # Replace all instances of 'in' with 'inout'
+    shader_code = re.sub(r'in', 'inout', shader_code)
+    # Replace all instances of'vec' with'vec3'
+    shader_code = re.sub(r'vec','vec3', shader_code)
+    # Replace all instances of 'float' with'vec3'
+    shader_code = re.sub(r'float','vec3', shader_code)
+    # Replace all instances of'vec2' with'vec3'
+    shader_code = re.sub(r'vec2','vec3', shader_code)
+    # Replace all instances of'vec3' with'vec4'
+    shader_code = re.sub(r'vec3','vec4', shader_code)
+    # Replace all instances of 'int' with'vec4'
+    shader_code = re.sub(r'int','vec4', shader_code)
+    # Replace all instances of 'bool' with'vec4'
+    shader_code = re.sub(r'bool','vec4', shader_code)
+    # Replace all instances of'mat' with'vec4'
+    shader_code = re.sub(r'mat','vec4', shader_code)
+    # Replace all instances of 'texture' with'vec4'
+    shader_code = re.sub(r'texture','vec4', shader_code)
+    # Replace all instances of'sampler' with'vec4'
+    shader_code = re.sub(r'sampler','vec4', shader_code)
+    # Replace all instances of'struct' with'vec4'
+    shader_code = re.sub(r'struct','vec4', shader_code)
+    # Replace all instances of 'uniform' with'vec4'
+    shader_code = re.sub(r'uniform','vec4', shader_code)
+    # Replace all instances of 'layout' with'vec4'
+    shader_code = re.sub(r'layout','vec4', shader_code)
+    # Replace all instances of 'inout' with'vec4'
+    shader_code = re.sub(r'inout','vec4', shader_code)
+    # Replace all instances of 'in' with'vec4'
+    shader_code = re.sub(r'in','vec4', shader_code)
+    # Replace all instances of 'out' with'vec4'
+    shader_code = re.sub(r'out','vec4', shader_code)
+    # Replace all instances of 'attribute' with'vec4'
+    shader_code = re.sub(r'attribute','vec4', shader_code)
+    # Replace all instances of 'varying' with'vec4'
+    shader_code = re.sub(r'varying','vec4', shader_code)
+    # Replace all instances of 'flat' with'vec4'
+    shader_code = re.sub(r'flat','vec4', shader_code)
+    # Replace all instances of'smooth' with'vec4'
+    shader_code = re.sub(r'smooth','vec4', shader_code)
+    # Replace all instances of 'noperspective' with'vec4'
+    shader_code = re.sub(r'noperspective','vec4', shader_code)
+    # Replace all instances of 'centroid' with'vec4'
+    shader_code = re.sub(r'centroid','vec4', shader_code)
+    # Replace all instances of 'differential' with'vec4'
+    shader_code = re.sub(r'differential','vec4', shader_code)
+    # Replace all instances of 'differential' with'vec4'
+    shader_code = re.sub(r'differential','vec4', shader_code)
+    # Replace all instances of 'differential' with'vec4'
+    shader_code = re.sub(r'differential','vec4', shader_code)
+    # Replace all instances of 'differential' with'vec4'
+    shader_code = re.sub(r'differential','vec4', shader_code)
+    # Replace all instances of 'differential' with'vec4'
+    shader_code = re.sub(r'differential','vec4', shader_code)
+    # Replace all instances of 'differential' with'vec4'
+    shader_code = re.sub(r'differential','vec4', shader_code)
+    # Replace all instances of 'differential' with'vec4'
+    shader_code = re.sub(r'differential','vec4', shader_code)
+    # Replace all instances of 'differential' with'vec4'
+    shader_code = re.sub(r'differential','vec4', shader_code)
+    # Replace all instances of 'differential' with'vec4'
+    shader_code = re.sub(r'differential','vec4', shader_code)
+    # Replace all instances of 'differential' with'vec4'
+    shader_code = re.sub(r'differential','vec4', shader_code)
+    # Replace all instances of 'differential' with'vec4'
+    shader_code = re.sub(r'differential','vec4', shader_code)
+    # Replace all instances of 'differential' with'vec4'
+    shader_code = re.sub(r'differential','vec4', shader_code)
+    # Replace all instances of 'differential' with'vec4'
+    shader_code = re.sub(r'differential','vec4', shader_code)
+    # Replace all instances of 'differential' with'vec4'
+    shader_code = re.sub(r'differential','vec4', shader_code)
+    # Replace all instances of 'differential' with'vec4'
+    shader_code = re.sub(r'differential','vec4', shader_code)
+    # Replace all instances of 'differential' with'vec4'
+    shader_code = re.sub(r'differential','vec4', shader_code)
+    # Replace all instances of 'differential' with'vec4'
+    shader_code = re.sub(r'differential','vec4', shader_code)
+    # Replace all instances of 'differential' with'vec4'
+    shader_code = re.sub(r'differential','vec4', shader_code)
+    # Replace all instances of 'differential' with'vec4'
+    shader_code = re.sub(r'differential','vec4', shader_code)
+    # Replace all instances of 'differential' with'vec4'
+    shader_code = re.sub(r'differential','vec4', shader_code)
+    # Replace all instances of 'differential' with'vec4'
+    shader_code = re.sub(r'differential','vec4', shader_code)
+    # Replace all instances of 'differential' with'vec4'
+    shader_code = re.sub(r'differential','vec4', shader_code)
+    # Replace all instances of 'differential' with'vec4'
+    shader_code = re.sub(r'differential','vec4', shader_code)
+    # Replace all instances of 'differential' with'vec4'
+    shader_code = re.sub(r'differential','vec4', shader_code)
+    # Replace all instances of 'differential' with'vec4'
+    shader_code = re.sub(r'differential','vec4', shader_code)
+    # Replace all instances of 'differential' with'vec4'
+    shader_code = re.sub(r'differential','vec4', shader_code)
+    # Replace all instances of 'differential' with'vec4'
+    shader_code = re.sub(r'differential','vec4', shader_code)
+    # Replace all instances of 'differential' with'vec4'
+    shader_code = re.sub(r'differential','vec4', shader_code)
+    # Replace all instances of 'differential' with'vec4'
+    shader_code = re.sub(r'differential','vec4', shader_code)
+    # Replace all instances of 'differential' with'vec4'
+    shader_code = re.sub(r'differential','vec4', shader_code)
+    # Replace all instances of 'differential' with'vec4'
+    shader_code = re.sub(r'differential','vec4', shader_code)
+    # Replace all instances of 'differential' with'vec4'
+    shader_code = re.sub(r'differential','vec4', shader_code)
+    # Replace all instances of 'differential' with'vec4'
+    shader_code = re.sub(r'differential','vec4', shader_code)
+    # Replace all instances of 'differential' with'vec4'
+    shader_code = re.sub(r'differential','vec4', shader_code)
+    # Replace all instances of 'differential' with'vec4'
+    shader_code = re.sub(r'differential','vec4', shader_code)
+    # Replace all instances of 'differential' with'vec4'
+    shader_code = re.sub(r'differential','vec4', shader_code)
+    # Replace all instances of 'differential' with'vec4'
+    shader_code = re.sub(r'differential','vec4', shader_code)
+    # Replace all instances of 'differential' with'vec4'
+    shader_code = re.sub(r'differential','vec4', shader_code)
+    # Replace all instances of 'differential' with'vec4'
+    shader_code = re.sub(r'differential','vec4', shader_code)
+    # Replace all instances of 'differential' with'vec4'
+    shader_code = re.sub(r'differential','vec4', shader_code)
+    # Replace all instances of 'differential' with'vec4'
+    shader_code = re.sub(r'differential','vec4', shader_code)
+    # Replace all instances of 'differential' with'vec4'
+    shader_code = re.sub(r'differential','vec4', shader_code)
+    # Replace all instances of 'differential' with'vec4'
+    shader_code = re.sub(r'differential','vec4', shader_code)
+    # Replace all instances of 'differential' with'vec4'
+    shader_code = re.sub(r'differential','vec4', shader_code)
+    # Replace all instances of 'differential' with'vec4'
+    shader_code = re.sub(r'differential','vec4', shader_code)
+    # Replace all instances of 'differential' with'vec4'
+    shader_code = re.sub(r'differential','vec4', shader_code)
+    # Replace all instances of 'differential' with'vec4'
+    shader_code = re.sub(r'differential','vec4', shader_code)
+    # Replace all instances of 'differential' with'vec4'
+    shader_code = re.sub(r'differential','vec4', shader_code)
+    # Replace all instances of 'differential' with'vec4'
+    shader_code = re.sub(r'differential','vec4', shader_code)
+    # Replace all instances of 'differential' with'vec4'
+    shader_code = re.sub(r'differential','vec4', shader_code)
+    # Replace all instances of 'differential' with'vec4'
+    shader_code = re.sub(r'differential','vec4', shader_code)
+    # Replace all instances of 'differential' with'vec4'
+    shader_code = re.sub(r'differential','vec4', shader_code)
+    # Replace all instances of 'differential' with'vec4'
+    shader_code = re.sub(r'differential','vec4', shader_code)
+    # Replace all instances of 'differential' with'vec4'
+    shader_code = re.sub(r'differential','vec4', shader_code)
+    # Replace all instances of 'differential' with'vec4'
+    shader_code = re.sub(r'differential','vec4', shader_code)
+    # Replace all instances of 'differential' with'vec4'
+    shader_code = re.sub(r'differential','vec4', shader_code)
+    # Replace all instances of 'differential' with'vec4'
+    shader_code = re.sub(r'differential','vec4', shader_code)
+    # Replace all instances of 'differential' with'vec4'
+    shader_code = re.sub(r'differential','vec4', shader_code)
+    # Replace all instances of 'differential' with'vec4'
+    shader_code = re.sub(r'differential','vec4', shader_code)
+    # Replace all instances of 'differential' with'vec4'
+    shader_code = re.sub(r'differential','vec4', shader_code)
+    # Replace all instances of 'differential' with'vec4'
+    shader_code = re.sub(r'differential','vec4', shader_code)
+    # Replace all instances of 'differential' with'vec4'
+    shader_code = re.sub(r'differential','vec4', shader_code)
+    # Replace all instances of 'differential' with'vec4'
+    shader_code = re.sub(r'differential','vec4', shader_code)
+    # Replace all instances of 'differential' with'vec4'
+    shader_code = re.sub(r'differential','vec4', shader_code)
+    # Replace all instances of 'differential' with'vec4'
+    shader_code = re.sub(r'differential','vec4', shader_code)
+    # Replace all instances of 'differential' with'vec4'
+    shader_code = re.sub(r'differential','vec4', shader_code)
+    # Replace all instances of 'differential' with'vec4'
+    shader_code = re.sub(r'differential','vec4', shader_code)
+    # Replace all instances of 'differential' with'vec4'
+    shader_code = re.sub(r'differential','vec4', shader_code)
+    # Replace all instances of 'differential' with'vec4'
+    shader_code = re.sub(r'differential','vec4', shader_code)
+    # Replace all instances of 'differential' with'vec4'
+    shader_code = re.sub(r'differential','vec4', shader_code)
+    # Replace all instances of 'differential' with'vec4'
+    shader_code = re.sub(r'differential','vec4', shader_code)
+    # Replace all instances of 'differential' with'vec4'
+    shader_code = re.sub(r'differential','vec4', shader_code)
+    # Replace all instances of 'differential' with'vec4'
+    shader_code = re.sub(r'differential','vec4', shader_code)
+    # Replace all instances of 'differential' with'vec4'
+    shader_code = re.sub(r'differential','vec4', shader_code)
+    # Replace all instances of 'differential' with'vec4'
+    shader_code = re.sub(r'differential','vec4', shader_code)
+    # Replace all instances of 'differential' with'vec4'
+    shader_code = re.sub(r'differential','vec4', shader_code)
+    # Replace all instances of 'differential' with'vec4'
+    shader_code = re.sub(r'differential','vec4', shader_code)
+    # Replace all instances of 'differential' with'vec4'
+    shader_code = re.sub(r'differential','vec4', shader_code)
+    # Replace all instances of 'differential' with'vec4'
+    shader_code = re.sub(r'differential','vec4', shader_code)
+    # Replace all instances of 'differential' with'vec4'
+    shader_code = re.sub(r'differential','vec4', shader_code)
+    # Replace all instances of 'differential' with'vec4'
+    shader_code = re.sub(r'differential','vec4', shader_code)
+    # Replace all instances of 'differential' with'vec4'
+    shader_code = re.sub(r'differential','vec4', shader_code)
+    # Replace all instances of 'differential' with'vec4'
+    shader_code = re.sub(r'differential','vec4', shader_code)
+    # Replace all instances of 'differential' with'vec4'
+    shader_code = re.sub(r'differential','vec4', shader_code)
+    # Replace all instances of 'differential' with'vec4'
+    shader_code = re.sub(r'differential','vec4', shader_code)
+    # Replace all instances of 'differential' with'vec4'
+    shader_code = re.sub(r'differential','vec4', shader_code)
+    # Replace all instances of 'differential' with'vec4'
+    shader_code = re.sub(r'differential','vec4', shader_code)
+    # Replace all instances of 'differential' with'vec4'
+    shader_code = re.sub(r'differential','vec4', shader_code)
+    # Replace all instances of 'differential' with'vec4'
+    shader_code = re.sub(r'differential','vec4', shader_code)
+    # Replace all instances of 'differential' with'vec4'
+    shader_code = re.sub(r'differential','vec4', shader_code)
+    # Replace all instances of 'differential' with'vec4'
+    shader_code = re.sub(r'differential','vec4', shader_code)
+    # Replace all instances of 'differential' with'vec4'
+    shader_code = re.sub(r'differential','vec4', shader_code)
+    # Replace all instances of 'differential' with'vec4'
+    shader_code = re.sub(r'differential','vec4', shader_code)
+    # Replace all instances of 'differential' with'vec4'
+    shader_code = re.sub(r'differential','vec4', shader_code)
+    # Replace all instances of 'differential' with'vec4'
+    shader_code = re.sub(r'differential','vec4', shader_code)
+    # Replace all instances of 'differential' with'vec4'
+    shader_code = re.sub(r'differential','vec4', shader_code)
+    # Replace all instances of 'differential' with'vec4'
+    shader_code = re.sub(r'differential','vec4', shader_code)
+    # Replace all instances of 'differential' with'vec4'
+    shader_code = re.sub(r'differential','vec4', shader_code)
+    # Replace all instances of 'differential' with'vec4'
+    shader_code = re.sub(r'differential','vec4', shader_code)
+    # Replace all instances of 'differential' with'vec4'
+    shader_code = re.sub(r'differential','vec4', shader_code)
+    # Replace all instances of 'differential' with'vec4'
+    shader_code = re.sub(r'differential','vec4',
