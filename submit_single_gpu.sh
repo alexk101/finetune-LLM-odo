@@ -12,7 +12,7 @@ module load miniforge3
 module load rocm/6.3.1
 module load craype-accel-amd-gfx90a
 
-CONDA_ENV="/ccsopen/home/pwk/scratch/pytorch-rocm-6.3.1"
+CONDA_ENV="/gpfs/wolf2/olcf/trn040/world-shared/pytorch-rocm-6.3.1"
 source activate ${CONDA_ENV}
 
 export HF_DATASETS_CACHE="$HOME/scratch/.huggingface"

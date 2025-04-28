@@ -22,7 +22,7 @@ If you use the `output` column, since llama-3 (which is what we were asked to us
 - **`run_inference.sh`**: SLURM job submission script for inference
 - **`export_DDP_vars.sh`**: Environment variable setup for distributed training (for future use)
 - **`questions.txt`**: Example questions for testing inference
-- **`example`**: This directory contains and example of both fine tuning output and inference
+- **`example`**: This directory contains examples of fine-tuning outputs (on both `output` and `solution` columns), inference results comparing base and fine-tuned models, and sample dataset files
 
 ## Prerequisites
 
